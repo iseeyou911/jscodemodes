@@ -44,3 +44,5 @@ className={ cls({ ... })() } -> className={ cls({ ... })() }
 ## Known issues:
 
 Codemod doesn't look for identifier type, and how it was initialized, so the codemod will modify all supported types of jsxExpressions for className attribute.
+
+Works only for JSX attribute className
