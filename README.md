@@ -10,8 +10,10 @@ To run codemod you should to use jscodeshift https://github.com/facebook/jscodes
 ## Works for
 
 ### ConditionalExpression
+null is supportded for consequent and alternate. 
+Consequent and alternate could be any types of supported expressions/identifier. Unsupported types will stay unchanged.
 ```
-className={ test ? consequent : alternate } -> className={ test ? consequent() : alternate() } null supported
+className={ test ? consequent : alternate } -> className={ test ? consequent() : alternate() }
 ```
 
 ### MemberExpression
@@ -26,9 +28,8 @@ className={ cls } -> className={ cls() }
 
 ### CallExpression
 
-At the case explicit call will be added only if last function call doesn't have arguments)
 ```
-//mix/state/is/has are working in a similar way
+// mix/state/is/has are working in a similar way
 className={ cls.mix('anotherCls') } -> className={ cls.mix('anotherCls')() }
 ```
 
@@ -36,8 +37,9 @@ className={ cls.mix('anotherCls') } -> className={ cls.mix('anotherCls')() }
 className={ cls({ ... }) } -> className={ cls({ ... })() }
 ```
 
+At the case explicit call will be added only if last function call doesn't have arguments.
 ```
-//nothing changed
+// nothing changed
 className={ cls({ ... })() } -> className={ cls({ ... })() } 
 ```
 
