@@ -3,55 +3,85 @@
 module.exports = function(file, api, options) {
     const j = api.jscodeshift;
     const root = j(file.source);
-    const ReactUtils = require('./utils/ReactUtils')(j);
 
-    const memberExressionReplace = node =>
+    const wrapIntoCallExpression = expression =>
         j.callExpression(
+            expression,
+            []
+        );
+
+    const memberExressionReplace = expression =>
+        wrapIntoCallExpression(
             j.memberExpression(
-                node.value.expression.object,
-                node.value.expression.property,
-            ),
-            []
+                expression.object,
+                expression.property,
+            )
         );
 
-    const callExressionReplace = node =>
-        j.callExpression(
+    const identifierReplace = expression =>
+        wrapIntoCallExpression(
+            j.identifier(
+                expression.name,
+            )
+        );
+
+    const callExressionReplace = expression => {
+        if (!expression.arguments.length) {
+            return expression;
+        }
+
+        return wrapIntoCallExpression(
             j.callExpression(
-                node.value.expression.callee,
-                node.value.expression.arguments,
-            ),
-            []
+                expression.callee,
+                expression.arguments,
+            )
         );
+    };
 
-    const mutations = root
+    const conditionalExpresionReplace = expression => {
+        expression.consequent = replaceByType(expression.consequent);
+        expression.alternate = replaceByType(expression.alternate);
+
+        return expression;
+    };
+
+    const replaceByType = expression => {
+        switch (expression.type) {
+            case 'ConditionalExpression':
+                return conditionalExpresionReplace(expression);
+            case 'Identifier':
+                return identifierReplace(expression);
+            case 'MemberExpression':
+                return memberExressionReplace(expression);
+            case 'CallExpression':
+                return callExressionReplace(expression);
+            default:
+                console.warn('Parser for ' + expression.type + ' is not implemented');
+                return expression;
+        }
+    };
+
+    root
         .find(j.JSXExpressionContainer)
         .filter(({ parentPath, value }) =>
             parentPath.value.type === 'JSXAttribute' &&
             parentPath.value.name.name === 'className' &&
             (
+                value.expression.type === 'ConditionalExpression' ||
                 value.expression.type === 'MemberExpression' ||
-                value.expression.type === 'CallExpression' &&
-                value.expression.arguments.length > 0
+                value.expression.type === 'Identifier' ||
+                value.expression.type === 'CallExpression'
             )
+
         )
         .forEach(node => {
-            switch (node.value.expression.type) {
-                case 'MemberExpression':
-                    node.value.expression = memberExressionReplace(node);
-                    break;
-                case 'CallExpression':
-                    node.value.expression = callExressionReplace(node);
-                    break;
-                default:
-                    throw new Error('Bad type ' + node.value.type);
-            }
-        })
-
-        return root.toSource({
-            quote: 'single',
-            lineTerminator: '\n',
+            const { expression } = node.value;
+            node.value.expression = replaceByType(expression);
         });
 
-    return null;
+    return root.toSource({
+        quote: 'single',
+        lineTerminator: '\n',
+    });
 };
 
