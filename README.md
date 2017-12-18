@@ -5,7 +5,7 @@ Codemods for js
 Explicit call of bem-cn class method (React 16 bug).
 
 ## Running
-To run codemod you should to use jscodeshift https://github.com/facebook/jscodeshift
+To run codemod you should use jscodeshift https://github.com/facebook/jscodeshift
 
 ## Works for
 
